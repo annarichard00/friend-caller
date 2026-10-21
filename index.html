@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Friend Caller</title>
+  <meta name="description" content="Picks someone to call, and everyone gets a turn before anyone repeats.">
+  <meta name="theme-color" content="#fdf6ee">
+
+  <!-- Installable app bits -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Friend Caller">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+  <link rel="stylesheet" href="src/FriendCaller.css">
+  <style>
+    html, body { margin: 0; background: #fdf6ee; }
+    body {
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+
+  <script src="vendor/mithril.min.js"></script>
+  <script type="importmap">
+    { "imports": { "mithril": "./src/mithril-shim.js" } }
+  </script>
+</head>
+<body>
+  <div id="friend-caller-root"></div>
+
+  <script type="module">
+    import { FriendCallerView } from "./src/FriendCallerView.js";
+    m.mount(document.getElementById("friend-caller-root"), FriendCallerView);
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>

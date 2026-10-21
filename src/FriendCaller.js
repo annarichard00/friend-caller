@@ -112,17 +112,21 @@ export function pickName(onRedraw) {
 
     if (ticks >= totalTicks) {
       clearInterval(interval);
-      const chosen = activeQueue[0];
-      const newQueue = activeQueue.slice(1);
-      const newHistory = [...state.history, chosen];
+      // Pick at random from whoever's left (the queue is in the order
+      // names were added, so taking queue[0] wasn't actually random).
+      const idx = Math.floor(Math.random() * activeQueue.length);
+      const chosen = activeQueue[idx];
+      const newQueue = activeQueue.filter((_, i) => i !== idx);
       const isDone = newQueue.length === 0;
 
       state.displayName = chosen;
       state.picked = chosen;
       state.spinning = false;
       state.allDone = isDone;
-      state.queue = isDone ? [] : newQueue;
-      state.history = isDone ? [] : newHistory;
+      state.queue = newQueue;
+      // Keep the full round in history (even when done) so the count and
+      // check marks stay right; the next spin after a finished round clears it.
+      state.history = [...state.history, chosen];
 
       persist();
       onRedraw?.();

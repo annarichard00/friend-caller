@@ -38,7 +38,7 @@ export const FriendCallerView = {
 
   view() {
     const s = state;
-    const called = s.history.length + (s.picked ? 1 : 0);
+    const called = s.history.length; // history already includes the current pick
     const remaining = s.queue.length;
 
     return m(".friend-caller", [

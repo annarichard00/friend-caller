@@ -18,11 +18,35 @@ Built by Anna via Claude, deployed and maintained in this repo.
 ## File structure
 
 ```
+index.html              # Standalone app page (no build step needed)
+manifest.webmanifest    # Lets phones install it with an app icon
+sw.js                   # Service worker so it opens offline
+icons/                  # App icons (192, 512, Apple touch icon)
+vendor/mithril.min.js   # Mithril 2.2.2, loaded directly by index.html
 src/
   FriendCaller.js       # Core logic — framework agnostic, all state & actions here
   FriendCallerView.js   # Mithril component — wires core logic into a view
   FriendCaller.css      # Styles — scoped under .friend-caller
+  mithril-shim.js       # Lets `import m from "mithril"` work without a bundler
 ```
+
+---
+
+## Running it standalone
+
+The repo runs as its own installable web app, hosted free on GitHub Pages
+(Settings → Pages → Deploy from branch → `main` / root).
+
+- **iPhone:** open the Pages link in Safari → Share → Add to Home Screen
+- **Android:** open it in Chrome → ⋮ menu → Install app / Add to Home screen
+
+Names are saved on the device (localStorage) until the storage adapter below is swapped for the backend.
+
+To test locally: `python3 -m http.server` in the repo folder, then open http://localhost:8000.
+
+When you change any file, bump `VERSION` in `sw.js` so installed copies pick up the update.
+
+The `src/` component still mounts into the Azure PWA shell exactly as before (see "Mounting the component" below); the standalone files don't affect that.
 
 ---
 
