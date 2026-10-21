@@ -29,12 +29,43 @@ const StorageAdapter = {
   },
 };
 
-// ─── Keys ─────────────────────────────────────────────────────────────────────
-const KEYS = {
-  names: "fc:names",
-  queue: "fc:queue",
-  history: "fc:history",
+// ─── Lists ────────────────────────────────────────────────────────────────────
+// Each list has its own names, queue and history. The "far" list keeps the
+// original storage keys so existing names carry over untouched.
+export const LISTS = {
+  far: {
+    id: "far",
+    tab: "long distance",
+    icon: "☎",
+    title: "who to call today",
+    verb: "call",
+    doneText: "you've called everyone!",
+    countWord: "called",
+    placeholder: "add a faraway friend…",
+  },
+  near: {
+    id: "near",
+    tab: "local",
+    icon: "🎟",
+    title: "who to hang out with",
+    verb: "make plans with",
+    doneText: "you've hung out with everyone!",
+    countWord: "invited",
+    placeholder: "add a local friend…",
+  },
 };
+
+function keysFor(listId) {
+  const prefix = listId === "far" ? "fc" : `fc:${listId}`;
+  return {
+    names: `${prefix}:names`,
+    queue: `${prefix}:queue`,
+    history: `${prefix}:history`,
+  };
+}
+
+const ACTIVE_KEY = "fc:activeList";
+let KEYS = keysFor("far");
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function shuffle(arr) {
@@ -48,6 +79,7 @@ function shuffle(arr) {
 
 // ─── State ────────────────────────────────────────────────────────────────────
 export const state = {
+  list: "far",
   names: [],
   queue: [],
   history: [],
@@ -59,6 +91,9 @@ export const state = {
 
 // ─── Persistence ─────────────────────────────────────────────────────────────
 export async function loadState() {
+  const saved = await StorageAdapter.get(ACTIVE_KEY);
+  state.list = LISTS[saved] ? saved : "far";
+  KEYS = keysFor(state.list);
   state.names   = (await StorageAdapter.get(KEYS.names))   ?? [];
   state.queue   = (await StorageAdapter.get(KEYS.queue))   ?? [];
   state.history = (await StorageAdapter.get(KEYS.history)) ?? [];
@@ -71,6 +106,17 @@ async function persist() {
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
+export async function switchList(listId, onRedraw) {
+  if (state.spinning || !LISTS[listId] || listId === state.list) return;
+  await persist();
+  state.picked = null;
+  state.displayName = "";
+  state.allDone = false;
+  await StorageAdapter.set(ACTIVE_KEY, listId);
+  await loadState();
+  onRedraw?.();
+}
+
 export function addName(name, onRedraw) {
   const trimmed = name.trim();
   if (!trimmed || state.names.includes(trimmed)) return false;

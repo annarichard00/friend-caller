@@ -16,6 +16,8 @@ import {
   addName,
   removeName,
   pickName,
+  switchList,
+  LISTS,
 } from "./FriendCaller.js";
 
 const pastelPalette = [
@@ -40,13 +42,30 @@ export const FriendCallerView = {
     const s = state;
     const called = s.history.length; // history already includes the current pick
     const remaining = s.queue.length;
+    const L = LISTS[s.list];
 
     return m(".friend-caller", [
 
+      // List toggle
+      m(".fc-tabs", { role: "tablist" },
+        Object.values(LISTS).map((list) =>
+          m("button.fc-tab", {
+            role: "tab",
+            "aria-selected": String(list.id === s.list),
+            class: list.id === s.list ? "fc-tab--active" : "",
+            disabled: s.spinning,
+            onclick: () => {
+              FriendCallerView.inputVal = "";
+              switchList(list.id, () => m.redraw());
+            },
+          }, list.tab)
+        )
+      ),
+
       // Header
       m(".fc-header", [
-        m("div", { style: "font-size:2rem" }, "☎"),
-        m("h1", "who to call today"),
+        m("div", { style: "font-size:2rem" }, L.icon),
+        m("h1", L.title),
         m("p.fc-subtitle", "everyone gets a turn before anyone repeats"),
       ]),
 
@@ -63,7 +82,7 @@ export const FriendCallerView = {
         ? m("span.fc-spin-name", s.displayName)
         : s.picked
         ? [
-            m("span.fc-label", "call"),
+            m("span.fc-label", L.verb),
             m("span.fc-picked-name", s.picked),
             m("span.fc-label", "tap to pick again"),
           ]
@@ -75,19 +94,19 @@ export const FriendCallerView = {
 
       // All done banner
       s.allDone && m(".fc-done-banner",
-        "🎉 you've called everyone! the list will reset on the next spin."
+        `🎉 ${L.doneText} the list will reset on the next spin.`
       ),
 
       // Progress
       s.names.length > 0 && m(".fc-progress",
-        `${called} called · ${remaining} remaining in this round`
+        `${called} ${L.countWord} · ${remaining} remaining in this round`
       ),
 
       // Add name input
       m(".fc-input-row", [
         m("input", {
           value: FriendCallerView.inputVal,
-          placeholder: "add a friend's name…",
+          placeholder: L.placeholder,
           oninput: (e) => { FriendCallerView.inputVal = e.target.value; },
           onkeydown: (e) => {
             if (e.key === "Enter") {

@@ -12,6 +12,7 @@ Built by Anna via Claude, deployed and maintained in this repo.
 - On each spin, picks a random name from the remaining unpicked pool
 - Once everyone has been picked, the deck resets automatically
 - Picked names are shown faded with a ✓ so you can see who's left
+- Two separate lists with a toggle at the top: **long distance** (people to call) and **local** (people to make in-person plans with), each with its own rounds
 
 ---
 
