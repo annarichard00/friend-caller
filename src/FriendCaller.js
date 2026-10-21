@@ -128,6 +128,26 @@ export function addName(name, onRedraw) {
   return true;
 }
 
+// Check or uncheck someone by hand (e.g. the app picked them but you
+// haven't called yet, or you reached out without the app picking them).
+export function toggleCalled(name, onRedraw) {
+  if (state.spinning || !state.names.includes(name)) return;
+  if (state.history.includes(name)) {
+    // Uncheck: back into this round's pile
+    state.history = state.history.filter((n) => n !== name);
+    if (!state.queue.includes(name)) state.queue.push(name);
+    if (state.picked === name) state.picked = null;
+    state.allDone = false;
+  } else {
+    // Check: count them as done for this round
+    state.queue = state.queue.filter((n) => n !== name);
+    state.history.push(name);
+    state.allDone = state.queue.length === 0;
+  }
+  persist();
+  onRedraw?.();
+}
+
 export function removeName(name, onRedraw) {
   state.names   = state.names.filter((n) => n !== name);
   state.queue   = state.queue.filter((n) => n !== name);

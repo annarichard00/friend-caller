@@ -200,6 +200,22 @@
   transition: opacity 0.3s;
 }
 
+.fc-tag { cursor: pointer; user-select: none; -webkit-user-select: none; }
+.fc-tag:focus-visible { outline: 2px solid #c4a882; outline-offset: 2px; }
+
+.fc-remove--confirm {
+  opacity: 1;
+  color: #a0392f;
+  font-size: 0.72rem;
+  font-weight: bold;
+}
+
+.fc-tags-hint {
+  font-size: 0.7rem;
+  color: #b0a090;
+  margin-top: 12px;
+}
+
 .fc-check {
   font-size: 0.65rem;
 }

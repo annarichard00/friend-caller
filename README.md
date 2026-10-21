@@ -13,6 +13,7 @@ Built by Anna via Claude, deployed and maintained in this repo.
 - Once everyone has been picked, the deck resets automatically
 - Picked names are shown faded with a ✓ so you can see who's left
 - Two separate lists with a toggle at the top: **long distance** (people to call) and **local** (people to make in-person plans with), each with its own rounds
+- Tap a name tag to check or uncheck it by hand (e.g. picked but not called yet); the ✕ asks "remove?" before deleting
 
 ---
 

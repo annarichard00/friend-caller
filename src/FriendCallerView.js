@@ -15,6 +15,7 @@ import {
   loadState,
   addName,
   removeName,
+  toggleCalled,
   pickName,
   switchList,
   LISTS,
@@ -33,6 +34,7 @@ function colorFor(name) {
 
 export const FriendCallerView = {
   inputVal: "",
+  confirmRemove: null,
 
   oninit() {
     loadState().then(() => m.redraw());
@@ -128,22 +130,47 @@ export const FriendCallerView = {
         m("p.fc-names-label", "your people"),
         m(".fc-tags",
           s.names.map((name) => {
-            const wasCalled = s.history.includes(name) || s.picked === name;
+            const wasCalled = s.history.includes(name);
+            const confirming = FriendCallerView.confirmRemove === name;
             return m(".fc-tag", {
               key: name,
-              style: `background:${colorFor(name)};opacity:${wasCalled ? 0.45 : 1}`,
+              role: "button",
+              tabindex: 0,
+              "aria-pressed": String(wasCalled),
+              title: wasCalled ? "tap to uncheck" : "tap to check off",
+              style: `background:${colorFor(name)};opacity:${wasCalled && !confirming ? 0.45 : 1}`,
+              onclick: () => {
+                FriendCallerView.confirmRemove = null;
+                toggleCalled(name, () => m.redraw());
+              },
+              onkeydown: (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  toggleCalled(name, () => m.redraw());
+                }
+              },
             }, [
               wasCalled && m("span.fc-check", "✓"),
               name,
-              m("span.fc-remove", {
-                onclick: (e) => {
-                  e.stopPropagation();
-                  removeName(name, () => m.redraw());
-                },
-              }, "✕"),
+              confirming
+                ? m("span.fc-remove.fc-remove--confirm", {
+                    onclick: (e) => {
+                      e.stopPropagation();
+                      FriendCallerView.confirmRemove = null;
+                      removeName(name, () => m.redraw());
+                    },
+                  }, "remove?")
+                : m("span.fc-remove", {
+                    "aria-label": `remove ${name}`,
+                    onclick: (e) => {
+                      e.stopPropagation();
+                      FriendCallerView.confirmRemove = name;
+                    },
+                  }, "✕"),
             ]);
           })
         ),
+        m("p.fc-tags-hint", "tap a name to check or uncheck it"),
       ]),
     ]);
   },
