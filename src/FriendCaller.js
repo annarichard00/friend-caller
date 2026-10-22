@@ -125,6 +125,50 @@ async function persist() {
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
+// ─── Backup & restore ────────────────────────────────────────────────────────
+// One text blob with both lists, so it can be pasted into Notes and back.
+export async function exportBackup() {
+  await persist();
+  const lists = {};
+  for (const id of Object.keys(LISTS)) {
+    const k = keysFor(id);
+    lists[id] = {
+      names:   (await StorageAdapter.get(k.names))   ?? [],
+      queue:   (await StorageAdapter.get(k.queue))   ?? [],
+      history: (await StorageAdapter.get(k.history)) ?? [],
+      dates:   (await StorageAdapter.get(k.dates))   ?? {},
+    };
+  }
+  return JSON.stringify({ app: "friend-caller", v: 1, active: state.list, lists });
+}
+
+// Returns true if restored, false if the text isn't a Friend Caller backup.
+export async function importBackup(text, onRedraw) {
+  let b;
+  try { b = JSON.parse(String(text).trim()); } catch { return false; }
+  if (!b || b.app !== "friend-caller" || typeof b.lists !== "object") return false;
+  if (state.spinning) return false;
+  const isList = (x) => Array.isArray(x) && x.every((n) => typeof n === "string");
+  for (const id of Object.keys(LISTS)) {
+    const l = b.lists[id];
+    if (!l) continue;
+    if (!isList(l.names)) return false;
+    const names = l.names;
+    const k = keysFor(id);
+    await StorageAdapter.set(k.names,   names);
+    await StorageAdapter.set(k.queue,   isList(l.queue)   ? l.queue.filter((n) => names.includes(n))   : [...names]);
+    await StorageAdapter.set(k.history, isList(l.history) ? l.history.filter((n) => names.includes(n)) : []);
+    await StorageAdapter.set(k.dates,   l.dates && typeof l.dates === "object" ? l.dates : {});
+  }
+  await StorageAdapter.set(ACTIVE_KEY, LISTS[b.active] ? b.active : "far");
+  state.picked = null;
+  state.displayName = "";
+  state.allDone = false;
+  await loadState();
+  onRedraw?.();
+  return true;
+}
+
 export async function switchList(listId, onRedraw) {
   if (state.spinning || !LISTS[listId] || listId === state.list) return;
   await persist();

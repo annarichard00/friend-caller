@@ -15,6 +15,7 @@ Built by Anna via Claude, deployed and maintained in this repo.
 - Two separate lists with a toggle at the top: **long distance** (people to call) and **local** (people to make in-person plans with), each with its own rounds
 - Tap a name tag to check or uncheck it by hand (e.g. picked but not called yet); the ✕ asks "remove?" before deleting
 - A green "you called ___ today!" / "you made plans with ___ today!" banner and a TODAY label on the tag show who you reached today; they clear on their own the next day
+- **Backup & restore** at the bottom: copy one text backup of both lists (paste it into Notes), and paste it back to restore after a reinstall or new phone
 
 ---
 

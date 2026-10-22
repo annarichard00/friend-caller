@@ -19,6 +19,8 @@ import {
   pickName,
   switchList,
   doneToday,
+  exportBackup,
+  importBackup,
   LISTS,
 } from "./FriendCaller.js";
 
@@ -38,9 +40,41 @@ function colorFor(name) {
   return pastelPalette[hash];
 }
 
+let msgTimer;
+function flash(msg) {
+  FriendCallerView.backupMsg = msg;
+  clearTimeout(msgTimer);
+  msgTimer = setTimeout(() => { FriendCallerView.backupMsg = ""; m.redraw(); }, 4000);
+  m.redraw();
+}
+
+async function copyBackup() {
+  const txt = await exportBackup();
+  try {
+    await navigator.clipboard.writeText(txt);
+    flash("Copied! Paste it in Notes to keep it safe.");
+  } catch {
+    FriendCallerView.backupText = txt;
+    flash("Select all and copy the text below.");
+    setTimeout(() => document.getElementById("fc-backup-text")?.select(), 50);
+  }
+}
+
+async function restoreBackup() {
+  const ok = await importBackup(FriendCallerView.backupText, () => m.redraw());
+  if (ok) {
+    FriendCallerView.backupText = "";
+    flash("Restored ✓");
+  } else {
+    flash("That doesn't look like a Friend Caller backup.");
+  }
+}
+
 export const FriendCallerView = {
   inputVal: "",
   confirmRemove: null,
+  backupText: "",
+  backupMsg: "",
 
   oninit() {
     loadState().then(() => m.redraw());
@@ -185,6 +219,27 @@ export const FriendCallerView = {
           })
         ),
         m("p.fc-tags-hint", "tap a name to check or uncheck it"),
+      ]),
+
+      // Backup & restore
+      m("details.fc-backup", [
+        m("summary", "Backup & restore"),
+        m("p.fc-backup-hint",
+          "Moving phones or re-adding the app? Copy a backup first (it includes both lists), then paste it back here."),
+        m(".fc-backup-row", [
+          m("button.fc-backup-btn", { type: "button", onclick: copyBackup }, "Copy backup"),
+          m("span.fc-backup-msg", FriendCallerView.backupMsg),
+        ]),
+        m("textarea.fc-backup-text#fc-backup-text", {
+          rows: 3,
+          placeholder: "Paste a backup here",
+          "aria-label": "Backup text",
+          value: FriendCallerView.backupText,
+          oninput: (e) => { FriendCallerView.backupText = e.target.value; },
+        }),
+        m(".fc-backup-row", [
+          m("button.fc-backup-btn", { type: "button", onclick: restoreBackup }, "Restore"),
+        ]),
       ]),
     ]);
   },

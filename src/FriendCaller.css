@@ -267,3 +267,43 @@
   0%, 100% { opacity: 0.6; }
   50%       { opacity: 1; }
 }
+
+/* Backup & restore */
+.fc-backup {
+  width: 100%;
+  max-width: 340px;
+  margin-top: 36px;
+  background: #fff;
+  border: 1px solid #e0d4c8;
+  border-radius: 14px;
+  padding: 12px 14px;
+  color: #3a2e28;
+  box-sizing: border-box;
+}
+.fc-backup summary { cursor: pointer; font-size: 0.85rem; color: #7a6a5a; }
+.fc-backup-hint { font-size: 0.75rem; color: #a08070; margin: 8px 0 0; line-height: 1.4; }
+.fc-backup-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+.fc-backup-btn {
+  background: #c4a882;
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  padding: 8px 16px;
+  font-family: 'Georgia', serif;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.fc-backup-msg { font-size: 0.75rem; color: #6a7a4a; }
+.fc-backup-text {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 10px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 0.7rem;
+  color: #3a2e28;
+  background: #fdf6ee;
+  border: 1px solid #e0d4c8;
+  border-radius: 10px;
+  padding: 8px 10px;
+  resize: vertical;
+}
