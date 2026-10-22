@@ -40,6 +40,7 @@ export const LISTS = {
     title: "who to call today",
     verb: "call",
     doneText: "you've called everyone!",
+    todayText: "you called",
     countWord: "called",
     placeholder: "add a faraway friend…",
   },
@@ -50,6 +51,7 @@ export const LISTS = {
     title: "who to hang out with",
     verb: "make plans with",
     doneText: "you've hung out with everyone!",
+    todayText: "you made plans with",
     countWord: "invited",
     placeholder: "add a local friend…",
   },
@@ -61,6 +63,7 @@ function keysFor(listId) {
     names: `${prefix}:names`,
     queue: `${prefix}:queue`,
     history: `${prefix}:history`,
+    dates: `${prefix}:dates`,
   };
 }
 
@@ -68,6 +71,19 @@ const ACTIVE_KEY = "fc:activeList";
 let KEYS = keysFor("far");
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+// Today's date on this phone, e.g. "2026-10-21" (local time, not UTC)
+export function today() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+// Names checked off today (still counts if a new round started since)
+export function doneToday() {
+  const t = today();
+  return state.names.filter((n) => state.dates[n] === t);
+}
+
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -83,6 +99,7 @@ export const state = {
   names: [],
   queue: [],
   history: [],
+  dates: {},     // name -> date they were last checked off
   picked: null,
   spinning: false,
   displayName: "",
@@ -97,12 +114,14 @@ export async function loadState() {
   state.names   = (await StorageAdapter.get(KEYS.names))   ?? [];
   state.queue   = (await StorageAdapter.get(KEYS.queue))   ?? [];
   state.history = (await StorageAdapter.get(KEYS.history)) ?? [];
+  state.dates   = (await StorageAdapter.get(KEYS.dates))   ?? {};
 }
 
 async function persist() {
   await StorageAdapter.set(KEYS.names,   state.names);
   await StorageAdapter.set(KEYS.queue,   state.queue);
   await StorageAdapter.set(KEYS.history, state.history);
+  await StorageAdapter.set(KEYS.dates,   state.dates);
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
@@ -135,6 +154,7 @@ export function toggleCalled(name, onRedraw) {
   if (state.history.includes(name)) {
     // Uncheck: back into this round's pile
     state.history = state.history.filter((n) => n !== name);
+    if (state.dates[name] === today()) delete state.dates[name];
     if (!state.queue.includes(name)) state.queue.push(name);
     if (state.picked === name) state.picked = null;
     state.allDone = false;
@@ -142,6 +162,7 @@ export function toggleCalled(name, onRedraw) {
     // Check: count them as done for this round
     state.queue = state.queue.filter((n) => n !== name);
     state.history.push(name);
+    state.dates[name] = today();
     state.allDone = state.queue.length === 0;
   }
   persist();
@@ -152,6 +173,7 @@ export function removeName(name, onRedraw) {
   state.names   = state.names.filter((n) => n !== name);
   state.queue   = state.queue.filter((n) => n !== name);
   state.history = state.history.filter((n) => n !== name);
+  delete state.dates[name];
   if (state.picked === name) state.picked = null;
   persist();
   onRedraw?.();
@@ -193,6 +215,7 @@ export function pickName(onRedraw) {
       // Keep the full round in history (even when done) so the count and
       // check marks stay right; the next spin after a finished round clears it.
       state.history = [...state.history, chosen];
+      state.dates[chosen] = today();
 
       persist();
       onRedraw?.();

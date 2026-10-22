@@ -18,6 +18,7 @@ import {
   toggleCalled,
   pickName,
   switchList,
+  doneToday,
   LISTS,
 } from "./FriendCaller.js";
 
@@ -25,6 +26,11 @@ const pastelPalette = [
   "#f4a7b9", "#f7c59f", "#fffacd", "#b5ead7", "#c7ceea",
   "#ffdac1", "#e2f0cb", "#b5d5f5", "#f9d5e5", "#d4f1f9",
 ];
+
+function joinNames(names) {
+  if (names.length <= 1) return names.join("");
+  return names.slice(0, -1).join(", ") + " and " + names[names.length - 1];
+}
 
 function colorFor(name) {
   let hash = 0;
@@ -45,6 +51,7 @@ export const FriendCallerView = {
     const called = s.history.length; // history already includes the current pick
     const remaining = s.queue.length;
     const L = LISTS[s.list];
+    const today = doneToday();
 
     return m(".friend-caller", [
 
@@ -69,6 +76,12 @@ export const FriendCallerView = {
         m("div", { style: "font-size:2rem" }, L.icon),
         m("h1", L.title),
         m("p.fc-subtitle", "everyone gets a turn before anyone repeats"),
+      ]),
+
+      // Done-today banner
+      today.length > 0 && !s.spinning && m(".fc-today", [
+        m("span.fc-today-icon", L.icon),
+        m("span", [`${L.todayText} `, m("strong", joinNames(today)), " today!"]),
       ]),
 
       // Spinner circle
@@ -138,7 +151,7 @@ export const FriendCallerView = {
               tabindex: 0,
               "aria-pressed": String(wasCalled),
               title: wasCalled ? "tap to uncheck" : "tap to check off",
-              style: `background:${colorFor(name)};opacity:${wasCalled && !confirming ? 0.45 : 1}`,
+              style: `background:${colorFor(name)};opacity:${wasCalled && !confirming ? (today.includes(name) ? 0.8 : 0.45) : 1}`,
               onclick: () => {
                 FriendCallerView.confirmRemove = null;
                 toggleCalled(name, () => m.redraw());
@@ -152,6 +165,7 @@ export const FriendCallerView = {
             }, [
               wasCalled && m("span.fc-check", "✓"),
               name,
+              today.includes(name) && m("span.fc-today-tag", "today"),
               confirming
                 ? m("span.fc-remove.fc-remove--confirm", {
                     onclick: (e) => {

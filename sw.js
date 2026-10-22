@@ -1,6 +1,6 @@
 // Service worker: lets Friend Caller open even with no internet.
 // Bump VERSION whenever you change any file below so phones pick up the update.
-const VERSION = "fc-v3";
+const VERSION = "fc-v4";
 const FILES = [
   "./",
   "./index.html",

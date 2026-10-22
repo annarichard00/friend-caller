@@ -63,6 +63,43 @@
   margin-top: 6px;
 }
 
+/* Done-today banner */
+.fc-today {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #e2f0cb;
+  border: 1px solid #c8dfa8;
+  color: #4a5a32;
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 0.85rem;
+  margin: -16px 0 24px;
+  text-align: center;
+  max-width: 340px;
+  animation: fc-pop 0.35s ease-out;
+}
+.fc-today strong { font-weight: bold; }
+.fc-today-icon { font-size: 1rem; }
+
+.fc-today-tag {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: #ffffffaa;
+  color: #4a5a32;
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+@keyframes fc-pop {
+  from { transform: scale(0.92); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fc-today { animation: none; }
+}
+
 /* Spinner Circle */
 .fc-circle {
   width: 220px;
