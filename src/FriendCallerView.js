@@ -17,6 +17,7 @@ import {
   removeName,
   toggleCalled,
   pickName,
+  confirmPicked,
   switchList,
   doneToday,
   exportBackup,
@@ -131,15 +132,24 @@ export const FriendCallerView = {
         ? m("span.fc-spin-name", s.displayName)
         : s.picked
         ? [
-            m("span.fc-label", L.verb),
+            m("span.fc-label", L.askLead),
             m("span.fc-picked-name", s.picked),
-            m("span.fc-label", "tap to pick again"),
+            m("span.fc-label", "today?"),
           ]
         : [
             m("span", { style: "font-size:1.6rem" }, "✦"),
             m("span.fc-hint", "tap to spin"),
           ]
       ),
+
+      // Waiting for an answer: nothing is checked off until you say so
+      s.picked && !s.spinning && m(".fc-confirm", [
+        m("button.fc-yes", {
+          type: "button",
+          onclick: () => confirmPicked(() => m.redraw()),
+        }, L.yesText),
+        m("p.fc-confirm-hint", "not yet? tap the circle to pick someone else, or come back later"),
+      ]),
 
       // All done banner
       s.allDone && m(".fc-done-banner",
@@ -181,6 +191,7 @@ export const FriendCallerView = {
             const confirming = FriendCallerView.confirmRemove === name;
             return m(".fc-tag", {
               key: name,
+              class: s.picked === name ? "fc-tag--pending" : "",
               role: "button",
               tabindex: 0,
               "aria-pressed": String(wasCalled),

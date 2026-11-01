@@ -9,7 +9,7 @@ Built by Anna via Claude, deployed and maintained in this repo.
 ## What it does
 
 - Maintains a list of names (friends/family to stay in touch with)
-- On each spin, picks a random name from the remaining unpicked pool
+- On each spin, picks a random name from the remaining unpicked pool and asks "did you call ___ today?"; they're only checked off when you tap yes (or tap their tag). The question waits if you close the app, for that day
 - Once everyone has been picked, the deck resets automatically
 - Picked names are shown faded with a ✓ so you can see who's left
 - Two separate lists with a toggle at the top: **long distance** (people to call) and **local** (people to make in-person plans with), each with its own rounds

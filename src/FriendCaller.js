@@ -41,6 +41,8 @@ export const LISTS = {
     verb: "call",
     doneText: "you've called everyone!",
     todayText: "you called",
+    askLead: "did you call",
+    yesText: "yes, I called!",
     countWord: "called",
     placeholder: "add a faraway friend…",
   },
@@ -52,6 +54,8 @@ export const LISTS = {
     verb: "make plans with",
     doneText: "you've hung out with everyone!",
     todayText: "you made plans with",
+    askLead: "did you make plans with",
+    yesText: "yes, we made plans!",
     countWord: "invited",
     placeholder: "add a local friend…",
   },
@@ -64,6 +68,7 @@ function keysFor(listId) {
     queue: `${prefix}:queue`,
     history: `${prefix}:history`,
     dates: `${prefix}:dates`,
+    pending: `${prefix}:pending`,
   };
 }
 
@@ -100,7 +105,8 @@ export const state = {
   queue: [],
   history: [],
   dates: {},     // name -> date they were last checked off
-  picked: null,
+  picked: null,   // who the app picked and is waiting to hear back about
+  pickedOn: null, // the date they were picked
   spinning: false,
   displayName: "",
   allDone: false,
@@ -115,6 +121,16 @@ export async function loadState() {
   state.queue   = (await StorageAdapter.get(KEYS.queue))   ?? [];
   state.history = (await StorageAdapter.get(KEYS.history)) ?? [];
   state.dates   = (await StorageAdapter.get(KEYS.dates))   ?? {};
+  // A pick still waiting for an answer survives closing the app, but only
+  // for the day it was made (they stay in the pile either way).
+  const pending = await StorageAdapter.get(KEYS.pending);
+  if (pending && pending.date === today() && state.queue.includes(pending.name)) {
+    state.picked = pending.name;
+    state.pickedOn = pending.date;
+  } else {
+    state.picked = null;
+    state.pickedOn = null;
+  }
 }
 
 async function persist() {
@@ -122,6 +138,7 @@ async function persist() {
   await StorageAdapter.set(KEYS.queue,   state.queue);
   await StorageAdapter.set(KEYS.history, state.history);
   await StorageAdapter.set(KEYS.dates,   state.dates);
+  await StorageAdapter.set(KEYS.pending, state.picked ? { name: state.picked, date: state.pickedOn ?? today() } : null);
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
@@ -159,6 +176,7 @@ export async function importBackup(text, onRedraw) {
     await StorageAdapter.set(k.queue,   isList(l.queue)   ? l.queue.filter((n) => names.includes(n))   : [...names]);
     await StorageAdapter.set(k.history, isList(l.history) ? l.history.filter((n) => names.includes(n)) : []);
     await StorageAdapter.set(k.dates,   l.dates && typeof l.dates === "object" ? l.dates : {});
+    await StorageAdapter.set(k.pending, null);
   }
   await StorageAdapter.set(ACTIVE_KEY, LISTS[b.active] ? b.active : "far");
   state.picked = null;
@@ -200,13 +218,14 @@ export function toggleCalled(name, onRedraw) {
     state.history = state.history.filter((n) => n !== name);
     if (state.dates[name] === today()) delete state.dates[name];
     if (!state.queue.includes(name)) state.queue.push(name);
-    if (state.picked === name) state.picked = null;
+    if (state.picked === name) { state.picked = null; state.pickedOn = null; }
     state.allDone = false;
   } else {
     // Check: count them as done for this round
     state.queue = state.queue.filter((n) => n !== name);
     state.history.push(name);
     state.dates[name] = today();
+    if (state.picked === name) { state.picked = null; state.pickedOn = null; }
     state.allDone = state.queue.length === 0;
   }
   persist();
@@ -218,19 +237,43 @@ export function removeName(name, onRedraw) {
   state.queue   = state.queue.filter((n) => n !== name);
   state.history = state.history.filter((n) => n !== name);
   delete state.dates[name];
-  if (state.picked === name) state.picked = null;
+  if (state.picked === name) { state.picked = null; state.pickedOn = null; }
   persist();
   onRedraw?.();
 }
 
+// Answer "did you call them today?" with yes: now they're checked off.
+export function confirmPicked(onRedraw) {
+  const name = state.picked;
+  if (!name || state.spinning) return;
+  state.queue = state.queue.filter((n) => n !== name);
+  if (!state.history.includes(name)) state.history.push(name);
+  state.dates[name] = today();
+  state.picked = null;
+  state.pickedOn = null;
+  state.allDone = state.queue.length === 0;
+  persist();
+  onRedraw?.();
+}
+
+// Picking someone does NOT check them off. They stay in this round's pile
+// until you confirm you actually reached out (confirmPicked) or tap their tag.
 export function pickName(onRedraw) {
   if (state.spinning || state.names.length === 0) return;
 
-  let activeQueue = state.queue.length > 0 ? state.queue : shuffle(state.names);
-  if (state.queue.length === 0) state.history = [];
+  const previous = state.picked; // whoever was still waiting on an answer
+  if (state.queue.length === 0) {
+    // Round finished: start a fresh one
+    state.history = [];
+    state.queue = shuffle(state.names);
+  }
+  // Prefer someone other than the person you were just asked about
+  let pool = state.queue.filter((n) => n !== previous);
+  if (pool.length === 0) pool = state.queue;
 
   state.spinning = true;
   state.picked = null;
+  state.pickedOn = null;
   state.allDone = false;
   onRedraw?.();
 
@@ -244,23 +287,11 @@ export function pickName(onRedraw) {
 
     if (ticks >= totalTicks) {
       clearInterval(interval);
-      // Pick at random from whoever's left (the queue is in the order
-      // names were added, so taking queue[0] wasn't actually random).
-      const idx = Math.floor(Math.random() * activeQueue.length);
-      const chosen = activeQueue[idx];
-      const newQueue = activeQueue.filter((_, i) => i !== idx);
-      const isDone = newQueue.length === 0;
-
+      const chosen = pool[Math.floor(Math.random() * pool.length)];
       state.displayName = chosen;
       state.picked = chosen;
+      state.pickedOn = today();
       state.spinning = false;
-      state.allDone = isDone;
-      state.queue = newQueue;
-      // Keep the full round in history (even when done) so the count and
-      // check marks stay right; the next spin after a finished round clears it.
-      state.history = [...state.history, chosen];
-      state.dates[chosen] = today();
-
       persist();
       onRedraw?.();
     }
